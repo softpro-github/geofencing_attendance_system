@@ -153,7 +153,10 @@ $printDate = date('d M Y, h:i A');
 
   <!-- Navbar -->
   <div class="navbar no-print">
-    <h2><i class="fas fa-history"></i> Attendance History</h2>
+    <div class="navbar-brand">
+      <img src="assets/img/logo.png" alt="Logo">
+      <h2><i class="fas fa-history"></i> Attendance History</h2>
+    </div>
     <div class="nav-actions">
       <a href="student_dashboard" class="btn btn-secondary btn-small">
         <i class="fas fa-arrow-left"></i> Dashboard

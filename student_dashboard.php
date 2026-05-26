@@ -108,7 +108,10 @@ if (isset($_SESSION['status'])) {
 <body>
   <div class="dashboard">
     <div class="navbar">
-      <h2>Student Dashboard</h2>
+      <div class="navbar-brand">
+        <img src="assets/img/logo.png" alt="Logo">
+        <h2>Student Dashboard</h2>
+      </div>
       <div class="nav-actions">
         <a href="student_history" class="btn btn-secondary btn-small">
           <i class="fas fa-history"></i> History

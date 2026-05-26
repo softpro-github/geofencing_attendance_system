@@ -25,7 +25,7 @@ This guide explains how to register, log in, mark attendance, and view your atte
    - **Full Name** — your real name as it should appear on records
    - **Matric Number** — e.g. `ICT/225230090`
    - **Department** — select from the list
-   - **Academic Level** — ND1, ND2, HND1, or HND2
+   - **Academic Level** — 100 Level, 200 Level, 300 Level, or 400 Level
    - **Password** — at least 6 characters
 3. Click **Create Account**.
 4. You will be returned to the Login tab automatically.

@@ -62,7 +62,10 @@ if (isset($_SESSION['status'])) {
 <body>
     <div class="dashboard">
         <div class="navbar">
-            <h2>Add Course</h2>
+            <div class="navbar-brand">
+                <img src="assets/img/logo.png" alt="Logo">
+                <h2>Add Course</h2>
+            </div>
             <div class="nav-actions">
                 <a class="btn btn-secondary btn-small" href="lecturer_dashboard">
                     &larr; Dashboard
@@ -97,10 +100,10 @@ if (isset($_SESSION['status'])) {
                     <label>Academic Level</label>
                     <select name="level" class="form-control" required>
                         <option value="">Choose Level</option>
-                        <option value="ND1">ND Year 1</option>
-                        <option value="ND2">ND Year 2</option>
-                        <option value="HND1">HND Year 1</option>
-                        <option value="HND2">HND Year 2</option>
+                        <option value="100 Level">100 Level</option>
+                        <option value="200 Level">200 Level</option>
+                        <option value="300 Level">300 Level</option>
+                        <option value="400 Level">400 Level</option>
                     </select>
                 </div>
 

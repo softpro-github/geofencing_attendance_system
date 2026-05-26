@@ -266,10 +266,10 @@ if (isset($_SESSION['lecturer_id'])) {
                 <svg class="field-icon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="15" y1="17" x2="3" y2="17"/></svg>
                 <select class="form-control" id="reg_level" required>
                   <option value="">Select Level</option>
-                  <option value="ND1">ND Year 1</option>
-                  <option value="ND2">ND Year 2</option>
-                  <option value="HND1">HND Year 1</option>
-                  <option value="HND2">HND Year 2</option>
+                  <option value="100 Level">100 Level</option>
+                  <option value="200 Level">200 Level</option>
+                  <option value="300 Level">300 Level</option>
+                  <option value="400 Level">400 Level</option>
                 </select>
               </div>
 

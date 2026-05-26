@@ -45,6 +45,30 @@ A location-based attendance tracking system built with PHP and MySQL. Students c
 
 ---
 
+## Screenshots
+
+| Login | Register |
+|---|---|
+| ![Login page](assets/img/ss-01-login.PNG) | ![Register](assets/img/ss-02-register.PNG) |
+
+| Student Dashboard | Marking Attendance |
+|---|---|
+| ![Student dashboard](assets/img/ss-03-student-dashboard.PNG) | ![Attendance checking](assets/img/ss-04-attendance-checking.PNG) |
+
+| Attendance Success | Student History |
+|---|---|
+| ![Attendance success](assets/img/ss-05-attendance-success.PNG) | ![Student history](assets/img/ss-06-student-history.PNG) |
+
+| Lecturer Dashboard | Course Modal |
+|---|---|
+| ![Lecturer dashboard](assets/img/ss-07-lecturer-dashboard.PNG) | ![Course modal](assets/img/ss-08-course-modal.PNG) |
+
+| Session History | Add Course |
+|---|---|
+| ![Session history](assets/img/ss-09-lecturer-history.PNG) | ![Add course](assets/img/ss-10-add-course.PNG) |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |

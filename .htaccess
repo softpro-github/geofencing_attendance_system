@@ -11,3 +11,4 @@ RewriteRule ^(.+)$ $1.php [L]
   AddHandler application/x-httpd-alt-php82 .php .php8 .phtml
 </IfModule>
 # php -- END cPanel-generated handler, do not edit
+

@@ -193,7 +193,10 @@
   <div class="dashboard">
     <!-- Navigation Bar -->
     <div class="navbar">
-      <h2><i class="fas fa-chalkboard-user"></i> Lecturer Dashboard</h2>
+      <div class="navbar-brand">
+        <img src="assets/img/logo.png" alt="Logo">
+        <h2><i class="fas fa-chalkboard-user"></i> Lecturer Dashboard</h2>
+      </div>
       <div class="nav-actions">
         <a href="add_courses" class="btn btn-secondary btn-small">
           <i class="fas fa-plus-circle"></i> Add Course

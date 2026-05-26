@@ -119,6 +119,17 @@ p {
   font-size: 1.5rem;
 }
 
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-brand img {
+  height: 45px;
+  width: auto;
+}
+
 .nav-actions {
   display: flex;
   gap: 10px;
