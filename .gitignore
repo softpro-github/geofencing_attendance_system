@@ -1,0 +1,6 @@
+# Database credentials — never commit these
+backend/db.php
+
+# XAMPP / OS clutter
+Thumbs.db
+.DS_Store
