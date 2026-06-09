@@ -25,8 +25,10 @@ A location-based attendance tracking system built with PHP and MySQL. Students c
 - Self-registration with department and academic level
 - Dashboard showing classes attended and active courses
 - Location-checked attendance marking — blocked if too far from class
+- **Face capture liveness detection** — random challenge (blink / turn left / turn right) via MediaPipe; defeats proxy attendance and static photos
 - Live countdown timer showing how long a session remains open
-- Full attendance history with course and date filtering
+- Full attendance history with course and date filtering, per-course attendance percentage, and exam eligibility status (≥ 70%)
+- Face photo thumbnails in history (click to zoom)
 - CSV export and print-to-PDF of personal history
 
 **Lecturer**
@@ -34,7 +36,7 @@ A location-based attendance tracking system built with PHP and MySQL. Students c
 - Add and delete courses (delete cascades to all attendance data)
 - Activate a session directly from the course card — sets classroom GPS coordinates, allowed radius, and optional auto-close timer
 - Live countdown on the dashboard showing time remaining for active sessions
-- Session history with per-session attendee lists
+- Session history with per-session attendee lists, each student's attendance percentage per course, and face photo thumbnails
 - Export history to CSV, print individual session reports
 
 **System**
@@ -42,6 +44,7 @@ A location-based attendance tracking system built with PHP and MySQL. Students c
 - Auto-redirect to dashboard if already logged in
 - Sessions auto-expire on the server and in the browser simultaneously
 - Duplicate attendance prevention per student and per IP/device
+- MediaPipe face detection assets bundled locally — works with no internet
 
 ---
 
@@ -51,21 +54,25 @@ A location-based attendance tracking system built with PHP and MySQL. Students c
 |---|---|
 | ![Login page](assets/img/ss-01-login.PNG) | ![Register](assets/img/ss-02-register.PNG) |
 
-| Student Dashboard | Marking Attendance |
+| Student Dashboard | Lecturer Dashboard |
 |---|---|
-| ![Student dashboard](assets/img/ss-03-student-dashboard.PNG) | ![Attendance checking](assets/img/ss-04-attendance-checking.PNG) |
+| ![Student dashboard](assets/img/ss-03-student-dashboard.PNG) | ![Lecturer dashboard](assets/img/ss-07-lecturer-dashboard.PNG) |
 
-| Attendance Success | Student History |
+| Add Course | Course Modal |
 |---|---|
-| ![Attendance success](assets/img/ss-05-attendance-success.PNG) | ![Student history](assets/img/ss-06-student-history.PNG) |
+| ![Add course](assets/img/ss-10-add-course.PNG) | ![Course modal](assets/img/ss-08-course-modal.PNG) |
 
-| Lecturer Dashboard | Course Modal |
-|---|---|
-| ![Lecturer dashboard](assets/img/ss-07-lecturer-dashboard.PNG) | ![Course modal](assets/img/ss-08-course-modal.PNG) |
+**New in this version — Face Capture Liveness Detection**
 
-| Session History | Add Course |
+| Face Challenge | Face Preview |
 |---|---|
-| ![Session history](assets/img/ss-09-lecturer-history.PNG) | ![Add course](assets/img/ss-10-add-course.PNG) |
+| ![Face capture challenge](assets/img/ss-11-face-challenge.PNG) | ![Face capture preview](assets/img/ss-12-face-preview.PNG) |
+
+**New in this version — Attendance Percentage**
+
+| Student History (attendance % + photos) | Lecturer History (per-student %) |
+|---|---|
+| ![Student history](assets/img/ss-13-student-history.PNG) | ![Lecturer history](assets/img/ss-14-lecturer-history.PNG) |
 
 ---
 
@@ -80,6 +87,7 @@ A location-based attendance tracking system built with PHP and MySQL. Students c
 | Alerts | SweetAlert2 |
 | Maps | Leaflet.js |
 | JS Utilities | jQuery 3 |
+| Face Detection | MediaPipe Tasks Vision 0.10.3 (bundled locally) |
 
 ---
 
