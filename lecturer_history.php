@@ -75,7 +75,7 @@ $sessions = $stmt->get_result();
 
 // Pre-fetch attendees for every session
 $as = $conn->prepare("
-    SELECT a.matric_number, st.name, a.timestamp, ROUND(a.distance) as distance
+    SELECT a.matric_number, st.name, a.timestamp, ROUND(a.distance) as distance, a.face_photo
     FROM attendance a
     LEFT JOIN students st ON a.matric_number = st.matric_number
     WHERE a.session_id = ?
@@ -91,6 +91,33 @@ while ($s = $sessions->fetch_assoc()) {
 
 $printDate = date('d M Y, h:i A');
 
+// Per-student attendance percentage per course
+$atsum_types  = "ii";
+$atsum_params = [$id, $id];
+$atsum_where  = "";
+if ($filter) {
+    $atsum_where   = "WHERE s.course_code = ?";
+    $atsum_types  .= "s";
+    $atsum_params[] = $filter;
+}
+$atsum_stmt = $conn->prepare("
+    SELECT
+        att.matric_number,
+        st.name,
+        s.course_code,
+        COUNT(DISTINCT att.session_id) as attended,
+        (SELECT COUNT(*) FROM attendance_sessions WHERE course_code = s.course_code AND lecturer_id = ?) as total_sessions
+    FROM attendance att
+    JOIN attendance_sessions s ON att.session_id = s.id AND s.lecturer_id = ?
+    LEFT JOIN students st ON att.matric_number = st.matric_number
+    $atsum_where
+    GROUP BY att.matric_number, s.course_code
+    ORDER BY s.course_code, attended DESC
+");
+$atsum_stmt->bind_param($atsum_types, ...$atsum_params);
+$atsum_stmt->execute();
+$attendanceSummary = $atsum_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 // CSV link params
 $csvParts = [];
 if ($filter) $csvParts[] = 'course=' . urlencode($filter);
@@ -103,6 +130,7 @@ $csvParams = $csvParts ? '?' . implode('&', $csvParts) : '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Session History - Lecturer</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/logo.png">
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -191,6 +219,37 @@ $csvParams = $csvParts ? '?' . implode('&', $csvParts) : '';
       }
       .empty-att { padding: 18px; text-align: center; color: var(--text-light); font-size: .88rem; }
       .empty-state { text-align: center; padding: 55px 20px; color: var(--text-light); }
+
+      .summary-card {
+        background: white; border-radius: 10px; box-shadow: var(--shadow-sm);
+        overflow: hidden; margin-bottom: 20px;
+      }
+      .summary-title {
+        padding: 13px 18px; font-weight: 700; font-size: .95rem;
+        background: var(--light-bg); border-bottom: 1px solid var(--border-color);
+        color: var(--text-dark); display: flex; align-items: center; gap: 8px;
+      }
+      .summary-course-heading {
+        padding: 8px 18px; font-size: .8rem; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .05em; background: #f0f4ff; color: var(--primary);
+        border-bottom: 1px solid var(--border-color);
+      }
+      .summary-card table thead th {
+        background: #f8fafc; font-size: .79rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+        padding: 10px 16px; border: none; color: var(--text-light);
+      }
+      .summary-card table tbody td {
+        padding: 11px 16px; vertical-align: middle;
+        border-color: var(--border-color); font-size: .9rem;
+      }
+      .summary-card table tbody tr:hover { background: #f8faff; }
+      .pct-bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+      .pct-bar-track { flex: 1; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+      .pct-bar { height: 100%; border-radius: 4px; }
+      .pct-label { font-weight: 700; font-size: .88rem; min-width: 44px; }
+      .pill-qualified     { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.78rem;font-weight:700;background:#d4edda;color:#155724; }
+      .pill-not-qualified { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.78rem;font-weight:700;background:#f8d7da;color:#721c24; }
       .empty-state i { font-size: 3rem; margin-bottom: 12px; color: var(--border-color); display: block; }
 
       /* ---- Print styles ---- */
@@ -335,6 +394,73 @@ $csvParams = $csvParts ? '?' . implode('&', $csvParts) : '';
   </div>
   <?php endif; ?>
 
+  <!-- Student Attendance Summary -->
+  <?php if (!empty($attendanceSummary)):
+    // Group rows by course_code
+    $grouped = [];
+    foreach ($attendanceSummary as $row) {
+        $grouped[$row['course_code']][] = $row;
+    }
+  ?>
+  <div class="summary-card">
+    <div class="summary-title">
+      <i class="fas fa-chart-bar"></i> Student Attendance Summary
+      <?php if ($filter): ?>
+        &mdash; <?= htmlspecialchars($filter) ?>
+      <?php endif; ?>
+    </div>
+    <?php foreach ($grouped as $courseCode => $students): ?>
+      <?php if (!$filter): ?>
+        <div class="summary-course-heading"><i class="fas fa-book"></i> <?= htmlspecialchars($courseCode) ?></div>
+      <?php endif; ?>
+      <table class="table" style="margin:0;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Matric Number</th>
+            <th>Student Name</th>
+            <th>Sessions Attended</th>
+            <th>Total Sessions</th>
+            <th>Percentage</th>
+            <th>Exam Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($students as $si => $stu):
+            $pct       = $stu['total_sessions'] > 0 ? round($stu['attended'] / $stu['total_sessions'] * 100, 1) : 0;
+            $qualified = $pct >= 70;
+            $barColor  = $qualified ? '#28a745' : '#dc3545';
+            $pctColor  = $qualified ? '#155724' : '#721c24';
+          ?>
+          <tr>
+            <td style="color:var(--text-light);font-size:.8rem;"><?= $si + 1 ?></td>
+            <td style="font-weight:600;font-size:.88rem;"><?= htmlspecialchars($stu['matric_number']) ?></td>
+            <td><?= htmlspecialchars($stu['name'] ?? 'Unknown') ?></td>
+            <td><?= $stu['attended'] ?></td>
+            <td><?= $stu['total_sessions'] ?></td>
+            <td>
+              <div class="pct-bar-wrap">
+                <div class="pct-bar-track">
+                  <div class="pct-bar" style="width:<?= min($pct,100) ?>%;background:<?= $barColor ?>"></div>
+                </div>
+                <span class="pct-label" style="color:<?= $pctColor ?>"><?= $pct ?>%</span>
+              </div>
+            </td>
+            <td>
+              <?php if ($qualified): ?>
+                <span class="pill-qualified"><i class="fas fa-check-circle"></i> Qualified</span>
+              <?php else: ?>
+                <span class="pill-not-qualified"><i class="fas fa-times-circle"></i> Not Qualified</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
   <!-- Session list -->
   <?php if (!empty($sessionData)): ?>
 
@@ -389,6 +515,7 @@ $csvParams = $csvParts ? '?' . implode('&', $csvParts) : '';
           <thead>
             <tr>
               <th>#</th>
+              <th>Photo</th>
               <th>Matric Number</th>
               <th>Student Name</th>
               <th>Time Marked</th>
@@ -401,6 +528,15 @@ $csvParams = $csvParts ? '?' . implode('&', $csvParts) : '';
             ?>
             <tr>
               <td style="color:var(--text-light);font-size:.8rem;"><?= $ai + 1 ?></td>
+              <td>
+                <?php if (!empty($att['face_photo'])): ?>
+                  <img src="../<?= htmlspecialchars($att['face_photo']) ?>"
+                       class="face-thumb" onclick="fcZoom(this)" title="Click to enlarge"
+                       style="width:38px;height:38px;object-fit:cover;border-radius:50%;border:2px solid var(--primary);cursor:pointer;">
+                <?php else: ?>
+                  <span style="color:var(--text-light);font-size:.8rem;">&mdash;</span>
+                <?php endif; ?>
+              </td>
               <td style="font-weight:600;font-size:.88rem;"><?= htmlspecialchars($att['matric_number']) ?></td>
               <td><?= htmlspecialchars($att['name'] ?? 'Unknown') ?></td>
               <td><?= $adt->format('h:i A') ?></td>
@@ -451,6 +587,20 @@ $csvParams = $csvParts ? '?' . implode('&', $csvParts) : '';
     var isOpen = panel.classList.contains('open');
     panel.classList.toggle('open', !isOpen);
     chev.classList.toggle('open',  !isOpen);
+  }
+
+  function fcZoom(img) {
+    var modal = document.getElementById('face-zoom-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'face-zoom-modal';
+      modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;cursor:pointer;';
+      modal.innerHTML = '<img id="face-zoom-img" style="max-width:90vw;max-height:90vh;border-radius:12px;border:3px solid white;">';
+      modal.addEventListener('click', function(){ modal.style.display='none'; });
+      document.body.appendChild(modal);
+    }
+    document.getElementById('face-zoom-img').src = img.src;
+    modal.style.display = 'flex';
   }
 </script>
 </body>

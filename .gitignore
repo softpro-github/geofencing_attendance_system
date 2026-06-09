@@ -4,3 +4,12 @@ backend/db.php
 # XAMPP / OS clutter
 Thumbs.db
 .DS_Store
+
+# assets/mediapipe/ is intentionally committed — those files make face
+# verification work offline with no CDN dependency. Do NOT add them here.
+
+# Student face photos are biometric data — never commit them
+uploads/faces/*.jpg
+uploads/faces/*.jpeg
+uploads/faces/*.png
+uploads/faces/*.webp

@@ -51,6 +51,7 @@ if (isset($_SESSION['reg_status'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lecturer Registration - Attendance System</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/logo.png">
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="plugins/sweetalerts/sweetalert2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">

@@ -76,6 +76,22 @@ if ($distance > $radius + $threshold) {
     exit;
 }
 
+// Save face photo
+$face_photo_path = null;
+$face_data = $_POST['face_photo'] ?? '';
+if (!empty($face_data) && preg_match('/^data:image\/(jpeg|png|webp);base64,/', $face_data, $m)) {
+    $raw = base64_decode(preg_replace('/^data:image\/\w+;base64,/', '', $face_data));
+    if ($raw !== false && strlen($raw) > 1000) {
+        $dir = __DIR__ . '/../uploads/faces/';
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        $safe   = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $matric);
+        $fname  = $safe . '_' . $session_id . '_' . time() . '.jpg';
+        if (file_put_contents($dir . $fname, $raw) !== false) {
+            $face_photo_path = 'uploads/faces/' . $fname;
+        }
+    }
+}
+
 // Duplicate attendance check
 $stmt = $conn->prepare("SELECT id FROM attendance WHERE matric_number = ? AND course_code = ? AND session_id = ?");
 $stmt->bind_param("ssi", $matric, $course, $session_id);
@@ -98,15 +114,15 @@ if ($stmt->get_result()->num_rows > 0) {
 }
 
 // Save attendance
-$stmt = $conn->prepare("INSERT INTO attendance (matric_number, course_code, session_id, timestamp, latitude, longitude, accuracy, device, ip_address, distance)
-                        VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?)");
+$stmt = $conn->prepare("INSERT INTO attendance (matric_number, course_code, session_id, timestamp, latitude, longitude, accuracy, device, ip_address, distance, face_photo)
+                        VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?)");
 if (!$stmt) {
     $_SESSION['status'] = "Database error. Please try again.";
     header("Location: ../student_dashboard");
     exit;
 }
 
-$stmt->bind_param("ssidddssd", $matric, $course, $session_id, $lat, $lng, $accuracy, $device, $ip, $distance);
+$stmt->bind_param("ssidddssds", $matric, $course, $session_id, $lat, $lng, $accuracy, $device, $ip, $distance, $face_photo_path);
 
 if ($stmt->execute()) {
     $_SESSION['status'] = "Attendance marked successfully.";

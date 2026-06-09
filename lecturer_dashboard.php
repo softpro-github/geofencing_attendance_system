@@ -37,6 +37,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Lecturer Dashboard - Attendance System</title>
+    <link rel="icon" type="image/x-icon" href="assets/img/logo.png">
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/all.min.css">
     <link href="plugins/sweetalerts/sweetalert2.min.css" rel="stylesheet">

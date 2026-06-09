@@ -25,6 +25,22 @@ $stmt->bind_param("s", $matric);
 $stmt->execute();
 $stats = $stmt->get_result()->fetch_assoc();
 
+// Per-course attendance percentage
+$csum_stmt = $conn->prepare("
+    SELECT
+        s.course_code,
+        COUNT(DISTINCT s.id) as total_sessions,
+        COUNT(DISTINCT CASE WHEN a.matric_number = ? THEN a.session_id END) as attended
+    FROM attendance_sessions s
+    LEFT JOIN attendance a ON s.id = a.session_id AND a.matric_number = ?
+    WHERE s.course_code IN (SELECT DISTINCT course_code FROM attendance WHERE matric_number = ?)
+    GROUP BY s.course_code
+    ORDER BY s.course_code
+");
+$csum_stmt->bind_param("sss", $matric, $matric, $matric);
+$csum_stmt->execute();
+$courseSummary = $csum_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
 // Distinct courses for filter dropdown
 $stmt = $conn->prepare("SELECT DISTINCT course_code FROM attendance WHERE matric_number = ? ORDER BY course_code");
 $stmt->bind_param("s", $matric);
@@ -39,7 +55,7 @@ $filterDates = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
 // All records (load all; JS handles filtering)
 $stmt = $conn->prepare("
-    SELECT course_code, timestamp, ROUND(distance) as distance
+    SELECT course_code, timestamp, ROUND(distance) as distance, face_photo
     FROM attendance
     WHERE matric_number = ?
     ORDER BY timestamp DESC
@@ -56,6 +72,7 @@ $printDate = date('d M Y, h:i A');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance History - <?= htmlspecialchars($matric) ?></title>
+    <link rel="icon" type="image/x-icon" href="assets/img/logo.png">
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -112,6 +129,31 @@ $printDate = date('d M Y, h:i A');
         background: none; border: none; padding: 0; cursor: pointer;
         color: var(--primary); font-size: .75rem; line-height: 1;
       }
+
+      .summary-card {
+        background: white; border-radius: 10px; box-shadow: var(--shadow-sm);
+        overflow: hidden; margin-bottom: 22px;
+      }
+      .summary-title {
+        padding: 13px 18px; font-weight: 700; font-size: .95rem;
+        background: var(--light-bg); border-bottom: 1px solid var(--border-color);
+        color: var(--text-dark);
+      }
+      .summary-card table thead th {
+        background: #f8fafc; font-size: .79rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .04em;
+        padding: 10px 16px; border: none; color: var(--text-light);
+      }
+      .summary-card table tbody td {
+        padding: 12px 16px; vertical-align: middle;
+        border-color: var(--border-color); font-size: .9rem;
+      }
+      .pct-bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+      .pct-bar-track { flex: 1; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+      .pct-bar { height: 100%; border-radius: 4px; }
+      .pct-label { font-weight: 700; font-size: .88rem; min-width: 44px; }
+      .pill-qualified     { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.78rem;font-weight:700;background:#d4edda;color:#155724; }
+      .pill-not-qualified { display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:.78rem;font-weight:700;background:#f8d7da;color:#721c24; }
 
       /* ---- Print styles ---- */
       .print-header { display: none; }
@@ -189,6 +231,53 @@ $printDate = date('d M Y, h:i A');
     </div>
   </div>
 
+  <!-- Course Attendance Summary -->
+  <?php if (!empty($courseSummary)): ?>
+  <div class="summary-card">
+    <div class="summary-title"><i class="fas fa-chart-bar"></i> Attendance Summary by Course</div>
+    <table class="table" style="margin:0;">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Sessions Attended</th>
+          <th>Total Sessions</th>
+          <th>Percentage</th>
+          <th>Exam Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($courseSummary as $cs):
+          $pct       = $cs['total_sessions'] > 0 ? round($cs['attended'] / $cs['total_sessions'] * 100, 1) : 0;
+          $qualified = $pct >= 70;
+          $barColor  = $qualified ? '#28a745' : '#dc3545';
+          $pctColor  = $qualified ? '#155724' : '#721c24';
+        ?>
+        <tr>
+          <td><span class="badge-course"><?= htmlspecialchars($cs['course_code']) ?></span></td>
+          <td><?= $cs['attended'] ?></td>
+          <td><?= $cs['total_sessions'] ?></td>
+          <td>
+            <div class="pct-bar-wrap">
+              <div class="pct-bar-track">
+                <div class="pct-bar" style="width:<?= min($pct,100) ?>%;background:<?= $barColor ?>"></div>
+              </div>
+              <span class="pct-label" style="color:<?= $pctColor ?>"><?= $pct ?>%</span>
+            </div>
+          </td>
+          <td>
+            <?php if ($qualified): ?>
+              <span class="pill-qualified"><i class="fas fa-check-circle"></i> Qualified</span>
+            <?php else: ?>
+              <span class="pill-not-qualified"><i class="fas fa-times-circle"></i> Not Qualified</span>
+            <?php endif; ?>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
+
   <?php if (!empty($allRecords)): ?>
   <!-- Filter card -->
   <div id="records-section"></div>
@@ -239,6 +328,7 @@ $printDate = date('d M Y, h:i A');
       <thead>
         <tr>
           <th>#</th>
+          <th>Photo</th>
           <th>Course</th>
           <th>Date</th>
           <th>Time</th>
@@ -252,6 +342,15 @@ $printDate = date('d M Y, h:i A');
         <tr data-course="<?= htmlspecialchars($row['course_code']) ?>"
             data-date="<?= $dt->format('Y-m-d') ?>">
           <td class="row-num" style="color:var(--text-light);font-size:.82rem;"><?= $i + 1 ?></td>
+          <td>
+            <?php if (!empty($row['face_photo'])): ?>
+              <img src="../<?= htmlspecialchars($row['face_photo']) ?>"
+                   class="face-thumb" onclick="fcZoom(this)" title="Click to enlarge"
+                   style="width:38px;height:38px;object-fit:cover;border-radius:50%;border:2px solid var(--primary);cursor:pointer;">
+            <?php else: ?>
+              <span style="color:var(--text-light);font-size:.8rem;">&mdash;</span>
+            <?php endif; ?>
+          </td>
           <td><span class="badge-course"><?= htmlspecialchars($row['course_code']) ?></span></td>
           <td><?= $dt->format('D, d M Y') ?></td>
           <td><?= $dt->format('h:i A') ?></td>
@@ -415,6 +514,20 @@ $printDate = date('d M Y, h:i A');
   }
 
   document.addEventListener('DOMContentLoaded', function() { applyFilters(); });
+
+  function fcZoom(img) {
+    var modal = document.getElementById('face-zoom-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'face-zoom-modal';
+      modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;cursor:pointer;';
+      modal.innerHTML = '<img id="face-zoom-img" style="max-width:90vw;max-height:90vh;border-radius:12px;border:3px solid white;">';
+      modal.addEventListener('click', function(){ modal.style.display='none'; });
+      document.body.appendChild(modal);
+    }
+    document.getElementById('face-zoom-img').src = img.src;
+    modal.style.display = 'flex';
+  }
 </script>
 </body>
 </html>
